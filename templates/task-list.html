@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Minhas Tarefas</title>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream: #F5F0E8;
+  --sage: #7A9E7E;
+  --sage-dark: #4A7050;
+  --sage-light: #B8D4BB;
+  --ink: #2A2A2A;
+  --ink-muted: #6B6B6B;
+  --paper: #FDFAF4;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--cream);
+  color: var(--ink);
+}
+
+/* Background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(122, 158, 126, 0.12) 39px,
+      rgba(122, 158, 126, 0.12) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 39px,
+      rgba(122, 158, 126, 0.06) 39px,
+      rgba(122, 158, 126, 0.06) 40px
+    );
+  z-index: 0;
+}
+
+/* Layout */
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.5rem;
+}
+
+.header em {
+  color: var(--sage-dark);
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sage-dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--sage);
+}
+
+.btn-secondary {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--sage-dark);
+  color: var(--sage-dark);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: rgba(122,158,126,0.1);
+}
+
+/* Task list */
+.task-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Task card */
+.task-card {
+  background: var(--paper);
+  border: 1px solid rgba(122,158,126,0.3);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: 0.2s;
+}
+
+.task-card:hover {
+  transform: translateY(-3px);
+}
+
+.task-title {
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.task-desc {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.task-status {
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--sage-dark);
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.modal.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-content {
+  background: var(--paper);
+  padding: 2rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal h2 {
+  font-family: 'DM Serif Display', serif;
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(122,158,126,0.4);
+  font-family: 'DM Sans';
+}
+
+textarea.input {
+  resize: none;
+  height: 100px;
+}
+
+/* Modal actions */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<main class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Task <em>Todo</em></h1>
+
+    <button class="btn-primary" id="btn-add-task">
+      + Nova Tarefa
+    </button>
+  </div>
+
+  <div class="task-list" id="task-list">
+{% for task in tasks%}
+    <div class="task-card">
+      <div class="task-title">{{task.task_title}}</div>
+      <div class="task-desc">{{task.task_description}}</div>
+      <div class="task-status">{{task.status.status_description}}</div>
+    </div>
+      {% endfor %}
+  </div>
+
+</main>
+
+<!-- MODAL -->
+<div class="modal hidden" id="modal-create-task">
+
+  <div class="modal-content">
+
+    <h2>Nova Tarefa</h2>
+
+    <input
+      class="input"
+      type="text"
+      placeholder="Título da tarefa"
+      id="task-title-input"
+    />
+
+    <textarea
+      class="input"
+      placeholder="Descrição da tarefa"
+      id="task-desc-input">
+    </textarea>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-cancel">Cancelar</button>
+      <button class="btn-primary" id="btn-save">Salvar</button>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

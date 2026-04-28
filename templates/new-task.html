@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Task Todo — Tasks</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --cream:#F5F0E8;
+  --sage:#7A9E7E;
+  --sage-dark:#4A7050;
+  --sage-light:#B8D4BB;
+  --ink:#2A2A2A;
+  --ink-muted:#6B6B6B;
+  --warm:#C9956A;
+  --warm-light:#EDD9C5;
+  --paper:#FDFAF4;
+  --red:#C96A6A;
+  --red-light:#F0D4D4;
+  --blue:#6A8EC9;
+  --blue-light:#D4DFF0;
+  --purple:#9A6AC9;
+  --purple-light:#E4D4F0;
+  --amber:#C9A86A;
+  --amber-light:#F0E8D4;
+}
+
+html,body{min-height:100%;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden}
+
+/* grid bg */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(122,158,126,.10) 39px,rgba(122,158,126,.10) 40px),
+    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(122,158,126,.05) 39px,rgba(122,158,126,.05) 40px);
+  pointer-events:none;z-index:0;
+}
+
+/* glow blobs */
+.blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+.blob.tl{top:-80px;left:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(122,158,126,.13) 0%,transparent 70%)}
+.blob.br{bottom:-100px;right:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(201,149,106,.10) 0%,transparent 70%)}
+
+/* ── layout ── */
+.app{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:2rem 1.25rem 6rem}
+
+/* ── header ── */
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;flex-wrap:wrap;gap:1rem}
+.logo{font-family:'DM Serif Display',serif;font-size:1.7rem;color:var(--ink)}
+.logo em{font-style:italic;color:var(--sage-dark)}
+.header-right{display:flex;align-items:center;gap:.75rem}
+
+/* ── buttons ── */
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border-radius:999px;transition:transform .18s,box-shadow .18s,background .18s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+
+.btn-primary{background:var(--sage-dark);color:#fff;padding:10px 22px;font-size:14px;box-shadow:0 4px 16px rgba(74,112,80,.22)}
+.btn-primary:hover{background:var(--sage);box-shadow:0 6px 24px rgba(74,112,80,.28);transform:translateY(-1px)}
+
+.btn-outline{background:var(--paper);color:var(--sage-dark);padding:10px 18px;font-size:13px;border:1.5px solid rgba(122,158,126,.4)}
+.btn-outline:hover{background:var(--sage-light);border-color:var(--sage);transform:translateY(-1px)}
+
+.btn-icon{width:38px;height:38px;border-radius:50%;background:var(--paper);border:1.5px solid rgba(122,158,126,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s,transform .18s;flex-shrink:0}
+.btn-icon:hover{background:var(--sage-light);transform:scale(1.06)}
+
+/* ── section label ── */
+.section-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:1.1rem;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:rgba(122,158,126,.2)}
+
+/* ── category block ── */
+.category{margin-bottom:2.2rem}
+.cat-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.cat-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.cat-title{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink)}
+.cat-count{font-size:12px;color:var(--ink-muted);margin-left:auto;background:rgba(122,158,126,.12);padding:3px 10px;border-radius:999px}
+
+/* ── task card ── */
+.task-list{display:flex;flex-direction:column;gap:.65rem}
+
+.task-card{
+  background:var(--paper);
+  border-radius:12px;
+  border:1px solid rgba(122,158,126,.2);
+  padding:14px 18px;
+  display:flex;align-items:flex-start;gap:14px;
+  transition:box-shadow .18s,transform .18s,border-color .18s;
+  animation:slideIn .35s ease both;
+}
+.task-card:hover{box-shadow:0 4px 20px rgba(74,112,80,.10);border-color:rgba(122,158,126,.4);transform:translateX(3px)}
+
+@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+
+.task-check{
+  width:20px;height:20px;border-radius:6px;
+  border:2px solid var(--sage);
+  flex-shrink:0;margin-top:1px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .18s,border-color .18s;
+}
+.task-check.done{background:var(--sage);border-color:var(--sage)}
+.task-check.done::after{content:'';display:block;width:5px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg);margin-top:-1px}
+
+.task-body{flex:1;min-width:0}
+.task-title{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:3px;transition:color .18s}
+.task-card:has(.task-check.done) .task-title{color:var(--ink-muted);text-decoration:line-through}
+.task-desc{font-size:12px;color:var(--ink-muted);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.task-actions{display:flex;gap:6px;opacity:0;transition:opacity .18s}
+.task-card:hover .task-actions{opacity:1}
+.task-btn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:background .15s}
+.task-btn.del{background:rgba(201,106,106,.12);color:var(--red)}
+.task-btn.del:hover{background:rgba(201,106,106,.25)}
+
+/* ── empty state ── */
+.empty{padding:28px 20px;text-align:center;border:1.5px dashed rgba(122,158,126,.3);border-radius:12px;color:var(--ink-muted);font-size:13px}
+.empty span{display:block;font-size:22px;margin-bottom:6px;opacity:.5}
+
+/* ── add task FAB ── */
+.fab{
+  position:fixed;bottom:2rem;right:2rem;z-index:10;
+  width:56px;height:56px;border-radius:50%;
+  background:var(--sage-dark);color:#fff;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;line-height:1;
+  box-shadow:0 8px 28px rgba(74,112,80,.35);
+  transition:transform .2s,box-shadow .2s,background .2s;
+}
+.fab:hover{background:var(--sage);transform:translateY(-3px) rotate(90deg);box-shadow:0 12px 36px rgba(74,112,80,.4)}
+.fab:active{transform:scale(.94)}
+
+/* ── overlay ── */
+.overlay{
+  position:fixed;inset:0;z-index:20;
+  background:rgba(42,42,42,.35);
+  backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s;
+}
+.overlay.open{opacity:1;pointer-events:all}
+
+/* ── popup ── */
+.popup{
+  background:var(--paper);
+  border-radius:20px;
+  border:1px solid rgba(122,158,126,.25);
+  padding:2rem;
+  width:100%;max-width:440px;
+  box-shadow:0 24px 64px rgba(42,42,42,.18);
+  transform:translateY(20px) scale(.97);
+  transition:transform .25s,opacity .25s;
+  opacity:0;
+}
+.overlay.open .popup{transform:translateY(0) scale(1);opacity:1}
+
+.popup-title{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:1.5rem;color:var(--ink)}
+.popup-title em{font-style:italic;color:var(--sage-dark)}
+
+.form-group{margin-bottom:1.1rem}
+label{display:block;font-size:12px;font-weight:500;color:var(--ink-muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+
+input[type=text],textarea,select{
+  width:100%;background:#fff;
+  border:1.5px solid rgba(122,158,126,.3);
+  border-radius:10px;padding:11px 14px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);
+  outline:none;transition:border-color .18s,box-shadow .18s;
+  resize:none;
+}
+input[type=text]:focus,textarea:focus,select:focus{
+  border-color:var(--sage);
+  box-shadow:0 0 0 3px rgba(122,158,126,.15);
+}
+textarea{min-height:90px;line-height:1.5}
+
+.popup-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.4rem}
+.btn-cancel{background:transparent;border:1.5px solid rgba(122,158,126,.3);color:var(--ink-muted);padding:10px 20px;font-size:13px;border-radius:999px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .18s}
+.btn-cancel:hover{background:rgba(122,158,126,.08)}
+
+/* ── new category popup ── */
+.cat-colors{display:flex;gap:8px;flex-wrap:wrap}
+.color-opt{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s}
+.color-opt:hover,.color-opt.sel{transform:scale(1.2);border-color:var(--ink)}
+
+/* ── progress bar ── */
+.progress-wrap{margin-bottom:2.5rem}
+.progress-info{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-muted);margin-bottom:6px}
+.progress-track{height:6px;background:rgba(122,158,126,.15);border-radius:999px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--sage-light),var(--sage-dark));border-radius:999px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ── responsive ── */
+@media(max-width:520px){
+  .header-right .btn-outline span{display:none}
+  .app{padding:1.5rem 1rem 5rem}
+  .fab{bottom:1.5rem;right:1.5rem}
+}
+</style>
+</head>
+<body>
+
+<div class="blob tl"></div>
+<div class="blob br"></div>
+
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">Task <em>Todo</em></div>
+    <div class="header-right">
+      <button class="btn btn-outline" onclick="openCatPopup()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+        <span>Nova categoria</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span>Progresso do dia</span>
+      <span id="prog-label">0 / 0 tasks</span>
+    </div>
+    <div class="progress-track"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+  </div>
+
+  <!-- Categories container -->
+  <div id="categories-container"></div>
+
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openTaskPopup()" title="Nova task">+</button>
+
+<!-- ─── POPUP: Nova Task ─── -->
+<div class="overlay" id="task-overlay" onclick="handleOverlayClick(event,'task-overlay')">
+  <div class="popup">
+    <div class="popup-title">Nova <em>Task</em></div>
+
+    <div class="form-group">
+      <label>Título</label>
+      <input type="text" id="task-title" placeholder="Ex: Revisar relatório..."/>
+    </div>
+
+    <div class="form-group">
+      <label>Descrição</label>
+      <textarea id="task-desc" placeholder="Detalhes da tarefa..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="task-cat"></select>
+    </div>
+
+    <div class="popup-actions">
+      <button class="btn-cancel" onclick="closePopup('task-overlay')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addTask()">Criar task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── POPUP: Nova Categoria ─── -->
+<div class="overlay" id="cat-overlay" onclick="handleOverlayClick(event,'cat-overlay')">
+  <div class="popup">
+    <div class="popup-title">Nova <em>Categoria</em></div>
+
+    <div class="form-group">
+      <label>Nome</label>
+      <input type="text" id="cat-name" placeholder="Ex: Estudos, Saúde..."/>
+    </div>
+
+    <div class="form-group">
+      <label>Cor</label>
+      <div class="cat-colors" id="color-picker">
+        <div class="color-opt sel" data-color="#7A9E7E" style="background:#7A9E7E"></div>
+        <div class="color-opt" data-color="#C96A6A" style="background:#C96A6A"></div>
+        <div class="color-opt" data-color="#6A8EC9" style="background:#6A8EC9"></div>
+        <div class="color-opt" data-color="#9A6AC9" style="background:#9A6AC9"></div>
+        <div class="color-opt" data-color="#C9A86A" style="background:#C9A86A"></div>
+        <div class="color-opt" data-color="#C9956A" style="background:#C9956A"></div>
+      </div>
+    </div>
+
+    <div class="popup-actions">
+      <button class="btn-cancel" onclick="closePopup('cat-overlay')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addCategory()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let categories = [
+  { id:'work',     name:'Work',     color:'#4A7050', tasks:[] },
+  { id:'personal', name:'Personal', color:'#C9956A', tasks:[] },
+];
+
+// Pre-seed tasks
+addSeed('work',     'Revisar relatório Q2',   'Analisar as métricas e preparar slides');
+addSeed('work',     'Reunião de planejamento', 'Daily com o time às 10h');
+addSeed('personal', 'Comprar mantimentos',     'Feira do bairro — sábado cedo');
+addSeed('personal', 'Ler 30 minutos',          'Continuar o livro de hábitos');
+
+function addSeed(catId, title, desc){
+  const cat = categories.find(c=>c.id===catId);
+  if(cat) cat.tasks.push({id:uid(), title, desc, done:false});
+}
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+// ── Render ──
+function render(){
+  const container = document.getElementById('categories-container');
+  container.innerHTML = '';
+
+  let total=0, done=0;
+  categories.forEach(cat=>{ total+=cat.tasks.length; done+=cat.tasks.filter(t=>t.done).length; });
+
+  document.getElementById('prog-label').textContent = `${done} / ${total} tasks`;
+  document.getElementById('prog-bar').style.width = total ? (done/total*100)+'%' : '0%';
+
+  categories.forEach((cat, ci) => {
+    const block = document.createElement('div');
+    block.className = 'category';
+    block.style.animationDelay = (ci*0.08)+'s';
+
+    const doneCount = cat.tasks.filter(t=>t.done).length;
+
+    block.innerHTML = `
+      <div class="section-label">${ci===0?'Suas listas':''}</div>
+      <div class="cat-header">
+        <div class="cat-dot" style="background:${cat.color}"></div>
+        <span class="cat-title">${cat.name}</span>
+        <span class="cat-count">${doneCount}/${cat.tasks.length}</span>
+      </div>
+      <div class="task-list" id="list-${cat.id}">
+        ${cat.tasks.length===0
+          ? `<div class="empty"><span>📋</span>Nenhuma task ainda.<br>Clique em + para adicionar.</div>`
+          : cat.tasks.map((t,ti)=>taskHTML(t,cat.id,ti,cat.color)).join('')
+        }
+      </div>
+    `;
+    container.appendChild(block);
+  });
+
+  // events
+  document.querySelectorAll('.task-check').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const {cat,idx}=el.dataset;
+      const c=categories.find(c=>c.id===cat);
+      if(c){ c.tasks[idx].done=!c.tasks[idx].done; render(); }
+    });
+  });
+  document.querySelectorAll('.task-btn.del').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const {cat,idx}=el.dataset;
+      const c=categories.find(c=>c.id===cat);
+      if(c){ c.tasks.splice(idx,1); render(); }
+    });
+  });
+
+  refreshCatSelect();
+}
+
+function taskHTML(t, catId, idx, color){
+  return `
+    <div class="task-card" style="border-left:3px solid ${color}30">
+      <div class="task-check ${t.done?'done':''}" data-cat="${catId}" data-idx="${idx}"></div>
+      <div class="task-body">
+        <div class="task-title">${t.title}</div>
+        ${t.desc?`<div class="task-desc">${t.desc}</div>`:''}
+      </div>
+      <div class="task-actions">
+        <button class="task-btn del" data-cat="${catId}" data-idx="${idx}" title="Remover">✕</button>
+      </div>
+    </div>`;
+}
+
+// ── Popups ──
+function openTaskPopup(){
+  refreshCatSelect();
+  document.getElementById('task-title').value='';
+  document.getElementById('task-desc').value='';
+  document.getElementById('task-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('task-title').focus(),250);
+}
+
+function openCatPopup(){
+  document.getElementById('cat-name').value='';
+  document.querySelectorAll('.color-opt').forEach((el,i)=>el.classList.toggle('sel',i===0));
+  document.getElementById('cat-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('cat-name').focus(),250);
+}
+
+function closePopup(id){ document.getElementById(id).classList.remove('open'); }
+
+function handleOverlayClick(e,id){
+  if(e.target.id===id) closePopup(id);
+}
+
+function addTask(){
+  const title = document.getElementById('task-title').value.trim();
+  if(!title){ shake('task-title'); return; }
+  const desc  = document.getElementById('task-desc').value.trim();
+  const catId = document.getElementById('task-cat').value;
+  const cat   = categories.find(c=>c.id===catId);
+  if(cat){ cat.tasks.push({id:uid(),title,desc,done:false}); }
+  closePopup('task-overlay');
+  render();
+}
+
+function addCategory(){
+  const name = document.getElementById('cat-name').value.trim();
+  if(!name){ shake('cat-name'); return; }
+  const color = document.querySelector('.color-opt.sel')?.dataset.color || '#7A9E7E';
+  const id = name.toLowerCase().replace(/\s+/g,'_')+uid();
+  categories.push({id, name, color, tasks:[]});
+  closePopup('cat-overlay');
+  render();
+}
+
+function refreshCatSelect(){
+  const sel = document.getElementById('task-cat');
+  sel.innerHTML = categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+function shake(id){
+  const el=document.getElementById(id);
+  el.style.animation='none';
+  el.offsetHeight;
+  el.style.animation='shake .4s ease';
+}
+
+// color picker
+document.getElementById('color-picker').addEventListener('click',e=>{
+  const opt=e.target.closest('.color-opt');
+  if(!opt)return;
+  document.querySelectorAll('.color-opt').forEach(el=>el.classList.remove('sel'));
+  opt.classList.add('sel');
+});
+
+// keyboard close
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closePopup('task-overlay'); closePopup('cat-overlay'); } });
+
+// enter to submit
+document.getElementById('task-title').addEventListener('keydown',e=>{ if(e.key==='Enter') addTask(); });
+document.getElementById('cat-name').addEventListener('keydown',e=>{ if(e.key==='Enter') addCategory(); });
+
+// shake animation
+const style=document.createElement('style');
+style.textContent='@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}';
+document.head.appendChild(style);
+
+render();
+</script>
+</body>
+</html>
