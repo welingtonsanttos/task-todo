@@ -10,9 +10,9 @@ logger = get_logger(__name__)
 
 
 class TaskController:
-    def __init__(self):
+    def __init__(self, v_app):
         self.session = session
-        self.app = Flask(__name__)  # , template_folder="../templates"
+        self.app = v_app  # , template_folder="../templates"
         self.register_routes()
 
     def register_routes(self):
@@ -134,5 +134,6 @@ class TaskController:
 
 
 if __name__ == "__main__":
-    app = TaskController()
-    app.run()
+    app = Flask(__name__)
+    controller = TaskController(app)
+    controller.run()

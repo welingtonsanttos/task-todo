@@ -1,10 +1,8 @@
 from controller.task_controller import TaskController
+from flask import Flask
 
-
-def run():
-    app = TaskController()
-    app.run()
-
+app = Flask(__name__)
+controller = TaskController(app)
 
 if __name__ == "__main__":
-    run()
+    app.run(debug=True)
